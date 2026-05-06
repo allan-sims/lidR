@@ -1,5 +1,6 @@
 #include "lidR/GridPartition.h"
 #include "Progress.h"
+#include "myomp.h"
 
 #include <boost/polygon/voronoi.hpp>
 
@@ -329,7 +330,7 @@ NumericVector C_interpolate_delaunay(DataFrame P, DataFrame L, NumericVector sca
 }
 
 // [[Rcpp::export(rng = false)]]
-NumericMatrix  C_tinfo(IntegerMatrix D, NumericMatrix P)
+NumericMatrix  C_tinfo(IntegerMatrix D, NumericMatrix P, int ncpu)
 {
   if (P.nrow() < 3)
     throw Rcpp::exception("Internal error in 'C_tinfo()': wrong number of rows for P", false); // # no cov
@@ -343,44 +344,45 @@ NumericMatrix  C_tinfo(IntegerMatrix D, NumericMatrix P)
   NumericMatrix N(D.nrow(), 7);
   std::fill(N.begin(), N.end(), NA_REAL);
 
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(ncpu)
+  #endif
   for (unsigned int i = 0, end = D.nrow() ; i < end ; i++)
   {
     int p1 = D(i,0)-1;
     int p2 = D(i,1)-1;
     int p3 = D(i,2)-1;
 
-    NumericVector A = NumericVector::create(P(p1,0), P(p1,1), P(p1,2));
-    NumericVector B = NumericVector::create(P(p2,0), P(p2,1), P(p2,2));
-    NumericVector C = NumericVector::create(P(p3,0), P(p3,1), P(p3,2));
+    double A0 = P(p1,0), A1 = P(p1,1), A2 = P(p1,2);
+    double B0 = P(p2,0), B1 = P(p2,1), B2 = P(p2,2);
+    double C0 = P(p3,0), C1 = P(p3,1), C2 = P(p3,2);
 
-    NumericVector u = A - B;
-    NumericVector v = A - C;
-    NumericVector w = B - C;
+    double u0 = A0-B0, u1 = A1-B1, u2 = A2-B2;
+    double v0 = A0-C0, v1 = A1-C1, v2 = A2-C2;
+    double w0 = B0-C0, w1 = B1-C1;
 
     // Cross product
-    NumericVector n(3);
-    n(0) = u(1)*v(2)-u(2)*v(1);
-    n(1) = u(2)*v(0)-u(0)*v(2);
-    n(2) = u(0)*v(1)-u(1)*v(0);
+    double n0 = u1*v2 - u2*v1;
+    double n1 = u2*v0 - u0*v2;
+    double n2 = u0*v1 - u1*v0;
 
     // normal vector
-    N(i,0) = n(0);
-    N(i,1) = n(1);
-    N(i,2) = n(2);
+    N(i,0) = n0;
+    N(i,1) = n1;
+    N(i,2) = n2;
 
     // intercept
-    N(i,3) = sum(-n*C);
+    N(i,3) = -(n0*C0 + n1*C1 + n2*C2);
 
     // area and projected area
-    N(i,4) = std::fabs(0.5 * sqrt(n(0) * n(0) + n(1) * n(1) + n(2) * n(2)));
-    N(i,5) = std::fabs(0.5 * n(2));
+    N(i,4) = std::fabs(0.5 * std::sqrt(n0*n0 + n1*n1 + n2*n2));
+    N(i,5) = std::fabs(0.5 * n2);
 
-    // max edge length
-    u.erase(2);
-    v.erase(2);
-    w.erase(2);
-    NumericVector e = NumericVector::create(sqrt(sum(pow(u, 2))), sqrt(sum(pow(v, 2))), sqrt(sum(pow(w, 2))));
-    N(i,6) = max(e);
+    // max edge length (2D: xy only)
+    double eu = std::sqrt(u0*u0 + u1*u1);
+    double ev = std::sqrt(v0*v0 + v1*v1);
+    double ew = std::sqrt(w0*w0 + w1*w1);
+    N(i,6) = std::max({eu, ev, ew});
   }
 
   colnames(N) = CharacterVector::create("nx", "ny", "nz", "intercept", "xyzarea", "xyarea", "maxedge");

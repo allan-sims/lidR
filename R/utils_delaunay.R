@@ -99,4 +99,4 @@ tInterpolate = function(D, P, X, threads = 1L)
 tSearch = C_tsearch
 
 # @rdname tDelaunay
-tInfo =  C_tinfo
+tInfo = function(D, P) C_tinfo(D, P, get_lidr_threads())

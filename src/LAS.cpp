@@ -186,13 +186,17 @@ void LAS::z_open(double resolution)
 
   SpatialIndex tree(las, skip);
 
-  Progress p(2*npoints, "Morphological filter: ");
+  bool abort = false;
+
+  Progress p1(npoints, "Morphological filter (dilate): ");
 
   // Dilate
+  #pragma omp parallel for num_threads(ncpu)
   for (unsigned int i = 0 ; i < npoints ; i++)
   {
-    p.check_abort();
-    p.update(i);
+    if (abort) continue;
+    if (p1.check_interrupt()) abort = true;
+    p1.increment();
     if (!skip[i]) continue;
 
     std::vector<PointXYZ> pts;
@@ -201,24 +205,31 @@ void LAS::z_open(double resolution)
 
     double min_pt(std::numeric_limits<double>::max());
 
-    for(unsigned  int j = 0 ; j < pts.size() ; j++)
+    for(unsigned int j = 0 ; j < pts.size() ; j++)
     {
       double z = pts[j].z;
-
-      if(z < min_pt)
-        min_pt = z;
+      if(z < min_pt) min_pt = z;
     }
 
+    #pragma omp critical
     Z_out[i] = min_pt;
   }
 
+  if (abort) throw Rcpp::internal::InterruptedException();
+
   NumericVector Z_temp = clone(Z_out);
 
-  // erode
+  abort = false;
+
+  Progress p2(npoints, "Morphological filter (erode): ");
+
+  // Erode
+  #pragma omp parallel for num_threads(ncpu)
   for (unsigned int i = 0 ; i < npoints ; i++)
   {
-    p.check_abort();
-    p.update(i+npoints);
+    if (abort) continue;
+    if (p2.check_interrupt()) abort = true;
+    p2.increment();
     if (!skip[i]) continue;
 
     std::vector<PointXYZ> pts;
@@ -230,13 +241,14 @@ void LAS::z_open(double resolution)
     for(unsigned int j = 0 ; j < pts.size() ; j++)
     {
       double z = Z_temp[pts[j].id];
-
-      if(z > max_pt)
-        max_pt = z;
+      if(z > max_pt) max_pt = z;
     }
 
+    #pragma omp critical
     Z_out[i] = max_pt;
   }
+
+  if (abort) throw Rcpp::internal::InterruptedException();
 
   Z = Z_out;
   return;

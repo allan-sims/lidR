@@ -518,7 +518,7 @@ rumple_index.numeric <- function(x, y = NULL, z = NULL, ...)
   {
     X <- cbind(x,y,z)
     dn <- suppressMessages(geometry::delaunayn(X[,1:2], options = "QbB"))
-    N <- C_tinfo(dn, X)
+    N <- C_tinfo(dn, X, get_lidr_threads())
     area  <- sum(N[,5])
     parea <- sum(N[,6])
     return(area/parea)

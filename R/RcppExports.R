@@ -25,8 +25,8 @@ C_interpolate_delaunay <- function(P, L, scales, offsets, trim = 0, min_normal_z
     .Call(`_lidR_C_interpolate_delaunay`, P, L, scales, offsets, trim, min_normal_z, ncpu)
 }
 
-C_tinfo <- function(D, P) {
-    .Call(`_lidR_C_tinfo`, D, P)
+C_tinfo <- function(D, P, ncpu) {
+    .Call(`_lidR_C_tinfo`, D, P, ncpu)
 }
 
 C_tsearch <- function(D, P, X, ncpu) {

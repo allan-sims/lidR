@@ -97,13 +97,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_tinfo
-NumericMatrix C_tinfo(IntegerMatrix D, NumericMatrix P);
-RcppExport SEXP _lidR_C_tinfo(SEXP DSEXP, SEXP PSEXP) {
+NumericMatrix C_tinfo(IntegerMatrix D, NumericMatrix P, int ncpu);
+RcppExport SEXP _lidR_C_tinfo(SEXP DSEXP, SEXP PSEXP, SEXP ncpuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< IntegerMatrix >::type D(DSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type P(PSEXP);
-    rcpp_result_gen = Rcpp::wrap(C_tinfo(D, P));
+    Rcpp::traits::input_parameter< int >::type ncpu(ncpuSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_tinfo(D, P, ncpu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -716,7 +717,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lidR_C_dalponte2016", (DL_FUNC) &_lidR_C_dalponte2016, 6},
     {"_lidR_C_delaunay", (DL_FUNC) &_lidR_C_delaunay, 4},
     {"_lidR_C_interpolate_delaunay", (DL_FUNC) &_lidR_C_interpolate_delaunay, 7},
-    {"_lidR_C_tinfo", (DL_FUNC) &_lidR_C_tinfo, 2},
+    {"_lidR_C_tinfo", (DL_FUNC) &_lidR_C_tinfo, 3},
     {"_lidR_C_tsearch", (DL_FUNC) &_lidR_C_tsearch, 4},
     {"_lidR_C_ptd", (DL_FUNC) &_lidR_C_ptd, 7},
     {"_lidR_C_spikefree", (DL_FUNC) &_lidR_C_spikefree, 6},
