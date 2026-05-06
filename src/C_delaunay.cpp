@@ -344,10 +344,12 @@ NumericMatrix  C_tinfo(IntegerMatrix D, NumericMatrix P, int ncpu)
   NumericMatrix N(D.nrow(), 7);
   std::fill(N.begin(), N.end(), NA_REAL);
 
+  int nrow = D.nrow();
+
   #ifdef _OPENMP
   #pragma omp parallel for num_threads(ncpu)
   #endif
-  for (unsigned int i = 0, end = D.nrow() ; i < end ; i++)
+  for (int i = 0 ; i < nrow ; i++)
   {
     int p1 = D(i,0)-1;
     int p2 = D(i,1)-1;

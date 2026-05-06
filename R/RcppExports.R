@@ -5,7 +5,7 @@ filterTimeBlockPulses <- function(pulsedt) {
     .Call(`_lidR_filterTimeBlockPulses`, pulsedt)
 }
 
-cmpCPA <- function(pulsedt, ncpu) {
+cmpCPA <- function(pulsedt, ncpu = 1L) {
     .Call(`_lidR_cmpCPA`, pulsedt, ncpu)
 }
 
@@ -25,7 +25,7 @@ C_interpolate_delaunay <- function(P, L, scales, offsets, trim = 0, min_normal_z
     .Call(`_lidR_C_interpolate_delaunay`, P, L, scales, offsets, trim, min_normal_z, ncpu)
 }
 
-C_tinfo <- function(D, P, ncpu) {
+C_tinfo <- function(D, P, ncpu = 1L) {
     .Call(`_lidR_C_tinfo`, D, P, ncpu)
 }
 
