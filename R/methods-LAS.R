@@ -107,8 +107,8 @@ LAS <- function(data, header = list(), crs = sf::NA_crs_, check = TRUE, index = 
     rlas::is_valid_extrabytes(header, "stop")
 
     rlas::is_valid_Intensity(data, "stop")
-    rlas::is_valid_ReturnNumber(header, data, "stop")
-    rlas::is_valid_NumberOfReturns(header, data, "stop")
+    rlas::is_valid_ReturnNumber(data, header, "stop")
+    rlas::is_valid_NumberOfReturns(data, header, "stop")
     rlas::is_valid_ScanDirectionFlag(data, "stop")
     rlas::is_valid_EdgeOfFlightline(data, "stop")
     rlas::is_valid_Classification(data, header, "stop")
