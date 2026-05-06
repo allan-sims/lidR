@@ -239,10 +239,13 @@ streamLAS.character = function(x, ofile, select = "*", filter = "", filter_wkt =
     }
   }
 
+  nthreads <- get_lidr_threads()
+  progress <- getOption("lidR.verbose")
+
   if (utils::packageVersion("rlas") >= "1.8.0") {
-    data <- rlas::read_and_write.las(ifiles, ofile, select, filter, geom)
+    data <- rlas::read_and_write.las(ifiles, ofile, select, filter, geom, progress = progress, nthreads = nthreads)
   } else {
-    data <- rlas::read_and_write.las(ifiles, ofile, select, filter, filter_wkt)
+    data <- rlas::read_and_write.las(ifiles, ofile, select, filter, filter_wkt, progress = progress, nthreads = nthreads)
   }
 
   if (is.null(data))
