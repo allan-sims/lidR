@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include "myomp.h"
 using namespace Rcpp;
 
 // [[Rcpp::export]]
@@ -52,7 +53,7 @@ IntegerVector filterTimeBlockPulses(DataFrame pulsedt)
 }
 
 // [[Rcpp::export]]
-DataFrame cmpCPA(DataFrame pulsedt)
+DataFrame cmpCPA(DataFrame pulsedt, int ncpu)
 {
   int n = pulsedt.nrow()/2; /* Number of pulse pairs */
 
@@ -75,16 +76,19 @@ DataFrame cmpCPA(DataFrame pulsedt)
   NumericVector PSI(n);
 
   double nearZeroValue = 1e-8;
-  double l1[6], l2[6];
-  double u[3], v[3], w[3], dP[3], cpa1[3], cpa2[3];
-  double a, b, c, d, e, D, sc, tc;
-  double t1, t2, w1, w2;
-  int i, j;
-  int psi1;
 
-  for(i = 0; i < n; i++)
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(ncpu)
+  #endif
+  for(int i = 0; i < n; i++)
   {
-    j = i*2; /* First pulse in pair */
+    double l1[6], l2[6];
+    double u[3], v[3], w[3], dP[3], cpa1[3], cpa2[3];
+    double a, b, c, d, e, D, sc, tc;
+    double t1, t2, w1, w2;
+    int psi1;
+
+    int j = i*2; /* First pulse in pair */
     l1[0] = XLast[j];
     l1[1] = YLast[j];
     l1[2] = ZLast[j];
@@ -125,7 +129,6 @@ DataFrame cmpCPA(DataFrame pulsedt)
     if( D < nearZeroValue )
     {
       sc = 0.0;
-
       if( b > c )
         tc = d / b;
       else
@@ -140,7 +143,6 @@ DataFrame cmpCPA(DataFrame pulsedt)
     dP[0] = w[0] + sc * u[0] - tc * v[0];
     dP[1] = w[1] + sc * u[1] - tc * v[1];
     dP[2] = w[2] + sc * u[2] - tc * v[2];
-    CPADist[i] = sqrt( dP[0] * dP[0] + dP[1] * dP[1] + dP[2] * dP[2] );
 
     cpa1[0] = l1[0] + u[0] * sc;
     cpa1[1] = l1[1] + u[1] * sc;
@@ -149,14 +151,16 @@ DataFrame cmpCPA(DataFrame pulsedt)
     cpa2[1] = l2[1] + v[1] * tc;
     cpa2[2] = l2[2] + v[2] * tc;
 
-    XCPA[i] = ( cpa1[0] + cpa2[0] ) / 2.0;
-    YCPA[i] = ( cpa1[1] + cpa2[1] ) / 2.0;
-    ZCPA[i] = ( cpa1[2] + cpa2[2] ) / 2.0;
-
-    CPATime[i]   = (t1 + t2) / 2.0;
-    CPAWeight[i] = (w1 + w2) / 2.0;
-
-    PSI[i] = psi1;
+    #pragma omp critical
+    {
+      CPADist[i]   = sqrt( dP[0] * dP[0] + dP[1] * dP[1] + dP[2] * dP[2] );
+      XCPA[i]      = ( cpa1[0] + cpa2[0] ) / 2.0;
+      YCPA[i]      = ( cpa1[1] + cpa2[1] ) / 2.0;
+      ZCPA[i]      = ( cpa1[2] + cpa2[2] ) / 2.0;
+      CPATime[i]   = (t1 + t2) / 2.0;
+      CPAWeight[i] = (w1 + w2) / 2.0;
+      PSI[i]       = psi1;
+    }
   }
 
   DataFrame output = DataFrame::create(

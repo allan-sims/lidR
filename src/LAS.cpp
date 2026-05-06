@@ -1082,8 +1082,10 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
 
   IntegerVector output(npoints); // vector to store the snag (or tree) classification values
 
+  #pragma omp parallel for num_threads(ncpu)
   for(unsigned int i = 0 ; i < npoints ; i++)
   {
+    int cls;
     if (ptDen_sph[i] >= pt_den_req &&
         meanBBPr_sph[i] >= BBPRthrsh_mat(0,0) &&
         ptDen_smcyl[i] >= pt_den_req &&
@@ -1091,7 +1093,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
         ptDen_bigcyl[i] >= pt_den_req &&
         meanBBPr_bigcyl[i] >= BBPRthrsh_mat(2,0))
     {
-      output[i] = 1;  // General snag class
+      cls = 1;  // General snag class
     }
     else if (ptDen_sph[i] >= 2 &&
              ptDen_sph[i] <= pt_den_req &&
@@ -1103,7 +1105,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
              ptDen_bigcyl[i] <= pt_den_req &&
              meanBBPr_bigcyl[i] >= BBPRthrsh_mat(2,1))
     {
-      output[i] = 2; // Small snag class
+      cls = 2; // Small snag class
     }
     else if (ptDen_sph[i] >= pt_den_req &&
              meanBBPr_sph[i] >= BBPRthrsh_mat(0,2) &&
@@ -1112,7 +1114,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
              ptDen_bigcyl[i] >= pt_den_req*7 &&
              meanBBPr_bigcyl[i] >= BBPRthrsh_mat(2,2))
     {
-      output[i] = 3; // Live crown edge snag class
+      cls = 3; // Live crown edge snag class
     }
     else if (ptDen_sph[i] >= pt_den_req &&
              meanBBPr_sph[i] >= BBPRthrsh_mat(0,3) &&
@@ -1121,12 +1123,15 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
              ptDen_bigcyl[i] >= pt_den_req*15 &&
              meanBBPr_bigcyl[i] >= BBPRthrsh_mat(2,3))
     {
-      output[i] = 4; // High canopy cover snag class
+      cls = 4; // High canopy cover snag class
     }
     else
     {
-      output[i] = 0; // Remaining points assigned to live tree class
+      cls = 0; // Remaining points assigned to live tree class
     }
+
+    #pragma omp critical
+    output[i] = cls;
   }
 
   return(output);

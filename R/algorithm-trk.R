@@ -141,7 +141,7 @@ Gatziolis2019 <- function(SEGLENFactor = 1.0059, AngleFactor = 0.8824, deltaT = 
     pulse.dt <- pulse.dt[PULSEFLAG == 1][, PULSEFLAG := NULL][]
 
     ## calculate cpa
-    trj.df <- cmpCPA(pulse.dt)
+    trj.df <- cmpCPA(pulse.dt, get_lidr_threads())
     data.table::setDT(trj.df)
     trj.df[, DIST := NULL]
     data.table::setcolorder(trj.df, c("T", "PointSourceID", "X", "Y", "Z", "WT"))

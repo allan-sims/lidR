@@ -23,13 +23,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // cmpCPA
-DataFrame cmpCPA(DataFrame pulsedt);
-RcppExport SEXP _lidR_cmpCPA(SEXP pulsedtSEXP) {
+DataFrame cmpCPA(DataFrame pulsedt, int ncpu);
+RcppExport SEXP _lidR_cmpCPA(SEXP pulsedtSEXP, SEXP ncpuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< DataFrame >::type pulsedt(pulsedtSEXP);
-    rcpp_result_gen = Rcpp::wrap(cmpCPA(pulsedt));
+    Rcpp::traits::input_parameter< int >::type ncpu(ncpuSEXP);
+    rcpp_result_gen = Rcpp::wrap(cmpCPA(pulsedt, ncpu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -712,7 +713,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_lidR_filterTimeBlockPulses", (DL_FUNC) &_lidR_filterTimeBlockPulses, 1},
-    {"_lidR_cmpCPA", (DL_FUNC) &_lidR_cmpCPA, 1},
+    {"_lidR_cmpCPA", (DL_FUNC) &_lidR_cmpCPA, 2},
     {"_lidR_C_chm_prep", (DL_FUNC) &_lidR_C_chm_prep, 9},
     {"_lidR_C_dalponte2016", (DL_FUNC) &_lidR_C_dalponte2016, 6},
     {"_lidR_C_delaunay", (DL_FUNC) &_lidR_C_delaunay, 4},

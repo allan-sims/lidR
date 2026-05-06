@@ -5,8 +5,8 @@ filterTimeBlockPulses <- function(pulsedt) {
     .Call(`_lidR_filterTimeBlockPulses`, pulsedt)
 }
 
-cmpCPA <- function(pulsedt) {
-    .Call(`_lidR_cmpCPA`, pulsedt)
+cmpCPA <- function(pulsedt, ncpu) {
+    .Call(`_lidR_cmpCPA`, pulsedt, ncpu)
 }
 
 C_chm_prep <- function(data, snlin, sncol, lap_size, thr_cav, thr_spk, med_size, dil_radius, nodata) {
