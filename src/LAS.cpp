@@ -262,8 +262,6 @@ void LAS::i_range_correction(DataFrame flightlines, double Rs, double f)
   NumericVector z = flightlines["Z"];
   NumericVector t = flightlines["gpstime"];
 
-  double i;
-
   // Compute the median sensor elevation then average range for this sensor
   // elevation. This gives a rough idea of the expected range and allows for
   // detecting failure and bad computations
@@ -272,26 +270,38 @@ void LAS::i_range_correction(DataFrame flightlines, double Rs, double f)
 
   IntegerVector Inorm(X.size());
 
+  bool abort = false;
+  bool warn_clamp = false;
+  std::exception_ptr err = nullptr;
+
   Progress pbar(npoints, "Range computation");
 
-  // Loop on each point
+  #pragma omp parallel for num_threads(ncpu)
   for (unsigned int k = 0 ; k < npoints ; k++)
   {
+    if (abort) continue;
+    if (pbar.check_interrupt()) abort = true;
     pbar.increment();
-    pbar.check_abort();
 
-    double R = range(x, y, z, t, k, R_control);
-
-    i = I[k] * std::pow((R/Rs),f);
-
-    if (i > 65535)
+    double R;
+    try { R = range(x, y, z, t, k, R_control); }
+    catch (...)
     {
-      Rf_warningcall(R_NilValue, "Normalized intensity does not fit in 16 bits. Value clamped to 2^16.");
-      i = 65535;
+      #pragma omp critical
+      { abort = true; err = std::current_exception(); }
+      continue;
     }
 
-    Inorm[k]  = i;
+    double val = I[k] * std::pow((R/Rs), f);
+    if (val > 65535) { warn_clamp = true; val = 65535; }
+
+    #pragma omp critical
+    Inorm[k] = (int)val;
   }
+
+  if (err) std::rethrow_exception(err);
+  if (abort) throw Rcpp::internal::InterruptedException();
+  if (warn_clamp) Rf_warningcall(R_NilValue, "Normalized intensity does not fit in 16 bits. Value clamped to 2^16.");
 
   I = Inorm;
 
